@@ -1,6 +1,49 @@
+type Listener = (...args: unknown[]) => void | Task;
+
+class Task {
+  _events: Record<string, Listener[]> = {};
+  on = (event: string, listener: Listener) => {
+    if (typeof this._events[event] === 'undefined') {
+      this._events[event] = [];
+    }
+    this._events[event].push(listener);
+    return this;
+  };
+  removeListener = (event: string, listener?: Listener) => {
+    if (typeof this._events[event] !== 'undefined' && listener) {
+      const index = this._events[event].indexOf(listener);
+      if (index !== -1) {
+        this._events[event].splice(index, 1);
+      }
+    }
+    return this;
+  };
+  emit = (event: string, ...args: unknown[]) => {
+    if (typeof this._events[event] !== 'undefined') {
+      this._events[event].forEach(listener => {
+        listener.apply(this, args);
+      });
+    }
+    return this;
+  };
+  once = (event: string, listener: Listener) => {
+    this.on(event, (...args) => {
+      this.removeListener(handler);
+      listener.apply(this, args);
+    });
+    return self;
+  };
+}
+
 class WorkerExecutor {
+  _workerPool: Worker[];
+  _taskQueue: Task[];
+  _workersInUse: number;
+  _maxWorkers: number;
+  _terminateWorker: boolean;
+  _scriptURL: string;
   constructor(
-    workerName,
+    workerName: string,
     { location = '/js/', maxWorkers = 2, terminateWorker = false } = {}
   ) {
     this._workerPool = [];
@@ -13,16 +56,16 @@ class WorkerExecutor {
     this._getWorker = this._getWorker.bind(this);
   }
 
-  async _getWorker() {
+  _getWorker = async () => {
     return this._workerPool.length
       ? this._workerPool.shift()
-      : this._createWorker();
-  }
+      : await this._createWorker();
+  };
 
   _createWorker() {
     return new Promise((resolve, reject) => {
       const newWorker = new Worker(this._scriptURL);
-      newWorker.onmessage = e => {
+      newWorker.onmessage = (e: MessageEvent<{ type?: string }>) => {
         if (e.data?.type === 'contentLoaded') {
           resolve(newWorker);
         }
@@ -31,7 +74,7 @@ class WorkerExecutor {
     });
   }
 
-  _handleTaskEnd(task) {
+  _handleTaskEnd(task: Task) {
     return () => {
       this._workersInUse--;
       const worker = task._worker;
@@ -51,25 +94,27 @@ class WorkerExecutor {
   _processQueue() {
     while (this._workersInUse < this._maxWorkers && this._taskQueue.length) {
       const task = this._taskQueue.shift();
-      const handleTaskEnd = this._handleTaskEnd(task);
-      task._execute(this._getWorker).done.then(handleTaskEnd, handleTaskEnd);
+      const handleTaskEnd = task && this._handleTaskEnd(task);
+      task?._execute(this._getWorker).done.then(handleTaskEnd, handleTaskEnd);
       this._workersInUse++;
     }
   }
 
-  execute(data, timeout = 1000) {
-    const task = eventify({});
-    task._execute = function (getWorker) {
+  execute(data: unknown, timeout = 1000) {
+    const task = eventify({} as Task);
+    task._execute = function (getWorker: () => Promise<Worker>) {
       getWorker().then(
-        worker => {
+        (worker: Worker) => {
           task._worker = worker;
           const timeoutId = setTimeout(() => {
-            task._worker.terminate();
+            task._worker?.terminate();
             task._worker = null;
             this.emit('error', { message: 'timeout' });
           }, timeout);
 
-          worker.onmessage = e => {
+          worker.onmessage = (
+            e: MessageEvent<{ type?: string; data: string | number }>
+          ) => {
             clearTimeout(timeoutId);
             // data.type is undefined when the message has been processed
             // successfully and defined when something else has happened (e.g.
@@ -88,7 +133,7 @@ class WorkerExecutor {
 
           worker.postMessage(data);
         },
-        err => this.emit('error', err)
+        (err: Error) => this.emit('error', err)
       );
       return this;
     };
@@ -96,7 +141,7 @@ class WorkerExecutor {
     task.done = new Promise((resolve, reject) => {
       task
         .once('done', data => resolve(data))
-        .once('error', err => reject(err.message));
+        .once('error', (err: Error) => reject(err.message));
     });
 
     this._taskQueue.push(task);
@@ -106,7 +151,7 @@ class WorkerExecutor {
 }
 
 // Error and completion handling
-const eventify = self => {
+const eventify = (self: Task) => {
   self._events = {};
 
   self.on = (event, listener) => {
@@ -147,6 +192,13 @@ const eventify = self => {
   return self;
 };
 
-export default function createWorkerExecutor(workerName, options) {
+export default function createWorkerExecutor(
+  workerName: string,
+  options: {
+    location?: string;
+    maxWorkers?: number;
+    terminateWorker?: boolean;
+  }
+) {
   return new WorkerExecutor(workerName, options);
 }
