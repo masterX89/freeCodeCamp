@@ -1,74 +1,48 @@
-import React, { Fragment, useState } from 'react';
+import React, { useState } from 'react';
 
 export interface TabsProps {
   defaultActiveKey?: {
-    currentIndex: any;
+    currentIndex: string;
   };
   disabled?: boolean;
-  onChange?: (activeKey: any) => any;
+  onChange?: (activeKey: string) => string;
 }
 
-export function TabPane(props: { children: any }) {
+export function TabPane(props: { children: JSX.Element[] }) {
   return <div>{props.children}</div>;
 }
 
-export function Tabs(props: TabsProps): JSX.Element {
+export const Tabs = React.forwardRef<HTMLElement, TabsProps>((props, ref) => {
   const [currentIndex, setCurrentIndex] = useState(props.defaultActiveKey);
-  const onChange = (activeKey: any) => {
-    if (typeof props.onChange === 'function') props.onChange(activeKey);
+  const onChange = (activeKey: string) => {
+    if (typeof props.onChange === 'function') {
+      props.onChange(activeKey);
+    }
     setCurrentIndex(activeKey);
   };
   return (
-    <div style={{ overflow: 'hidden' }}>
-      <div
-        style={{
-          display: 'flex',
-          position: 'relative',
-          zIndex: 1,
-          padding: '8px 16px',
-          background: '#fff',
-          flexShrink: 0
-        }}
-      >
-        {React.Children.map(props.children, (element, index) => {
-          let { disabled, tab } = element.props;
+    <div className='overflow-hidden'>
+      <div className='flex relative py-8 px-16'>
+        {React.Children.map(props.children, element => {
+          const { disabled, tab } = element.props;
           return (
             <button
-              className={currentIndex === element.key ? 'active' : ''}
+              className='flex-initial px-4'
               key={element.key}
               disabled={disabled}
               onClick={() => onChange(element.key)}
-              style={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                margin: '0 34px 0 0',
-                padding: '12px 0px',
-                boxSizing: 'border-box',
-                border: 'none',
-                boxShadow: 'none',
-                fontSize: '14px'
-              }}
             >
               {tab}
             </button>
           );
         })}
       </div>
-      <div
-        style={{
-          display: 'flex',
-          flex: 1,
-          height: '100%'
-        }}
-      >
-        {React.Children.map(props.children, (element, index) => {
+      <div className='flex-1'>
+        {React.Children.map(props.children, element => {
           return (
             <div
               key={element.key}
-              style={{
-                display: currentIndex === element.key ? 'block' : 'none'
-              }}
+              className={`${currentIndex === element.key ? 'block' : 'hidden'}`}
             >
               {element}
             </div>
@@ -77,4 +51,6 @@ export function Tabs(props: TabsProps): JSX.Element {
       </div>
     </div>
   );
-}
+});
+
+Tabs.displayName = 'Tabs';
