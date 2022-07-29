@@ -17,6 +17,19 @@ const Template: Story<TabsProps> = args => (
         <TabPane>B Content</TabPane>
       </div>
     </Tabs>
+
+    {/* <Tabs.Group>
+      <Tabs.List>
+        <Tab>Tab 1</Tab>
+        <Tab>Tab 2</Tab>
+        <Tab>Tab 3</Tab>
+      </Tabs.List>
+      <Tabs.Panels>
+        <Tabs.Panel>Content 1</Tabs.Panel>
+        <Tabs.Panel>Content 2</Tabs.Panel>
+        <Tabs.Panel>Content 3</Tabs.Panel>
+      </Tabs.Panels>
+    </Tabs.Group> */}
   </div>
 );
 

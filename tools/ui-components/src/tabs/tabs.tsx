@@ -12,7 +12,7 @@ export function TabPane(props: { children: JSX.Element[] }) {
   return <div>{props.children}</div>;
 }
 
-export const Tabs = React.forwardRef<HTMLElement, TabsProps>((props, ref) => {
+export const Tabs = React.forwardRef<HTMLElement, TabsProps>(props => {
   const [currentIndex, setCurrentIndex] = useState(props.defaultActiveKey);
   const onChange = (activeKey: string) => {
     if (typeof props.onChange === 'function') {
