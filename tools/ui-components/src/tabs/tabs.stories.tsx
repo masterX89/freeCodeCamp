@@ -1,6 +1,6 @@
 import { Story } from '@storybook/react';
 import React from 'react';
-import { Tabs, TabsProps } from './tabs';
+import { Tabs, TabsProps, TabPane } from './tabs';
 
 const story = {
   title: 'Example/Tabs',
@@ -9,12 +9,21 @@ const story = {
 
 const Template: Story<TabsProps> = args => (
   <Tabs {...args}>
-    <div tab='tab1'></div>
-    <div tab='tab2'></div>
+    <div tab='A00000' key='1'>
+      <TabPane>A Content</TabPane>
+    </div>
+    <div tab='B' key='2'>
+      <TabPane>B Content</TabPane>
+    </div>
   </Tabs>
 );
 
 export const Basic = Template.bind({});
-Basic.args = {};
+Basic.args = {
+  defaultActiveKey: '1',
+  onChange: activeKey => {
+    console.log('activeKey', activeKey);
+  }
+};
 
 export default story;

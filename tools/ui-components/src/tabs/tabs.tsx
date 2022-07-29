@@ -8,7 +8,7 @@ export interface TabsProps {
   onChange?: (activeKey: any) => any;
 }
 
-function TabPane(props: { children: any }) {
+export function TabPane(props: { children: any }) {
   return <div>{props.children}</div>;
 }
 
@@ -52,6 +52,26 @@ export function Tabs(props: TabsProps): JSX.Element {
             >
               {tab}
             </button>
+          );
+        })}
+      </div>
+      <div
+        style={{
+          display: 'flex',
+          flex: 1,
+          height: '100%'
+        }}
+      >
+        {React.Children.map(props.children, (element, index) => {
+          return (
+            <div
+              key={element.key}
+              style={{
+                display: currentIndex === element.key ? 'block' : 'none'
+              }}
+            >
+              {element}
+            </div>
           );
         })}
       </div>
