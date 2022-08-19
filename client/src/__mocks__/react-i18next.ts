@@ -2,19 +2,27 @@ import React from 'react';
 
 const reactI18next = jest.genMockFromModule('react-i18next');
 
+// TODO: change it
+type NodeProps = {
+  children?: React.ReactChildren;
+  props?: {
+    children?: React.ReactChildren;
+  };
+};
+
 // modified from https://github.com/i18next/react-i18next/blob/master/example/test-jest/src/__mocks__/react-i18next.js
-const hasChildren = node =>
+const hasChildren = (node: NodeProps) =>
   node && (node.children || (node.props && node.props.children));
 
-const getChildren = node =>
+const getChildren = (node: NodeProps) =>
   node && node.children ? node.children : node.props && node.props.children;
 
-const renderNodes = reactNodes => {
+const renderNodes = (reactNodes: Record<string, React.ReactElement>) => {
   if (typeof reactNodes === 'string') {
     return reactNodes;
   }
 
-  return Object.keys(reactNodes).map((key, i) => {
+  return Object.keys(reactNodes).map((key, i): string | React.ReactElement => {
     const child = reactNodes[key];
     const isElement = React.isValidElement(child);
 
@@ -36,14 +44,17 @@ const renderNodes = reactNodes => {
   });
 };
 
-const withTranslation = () => Component => {
-  Component.defaultProps = { ...Component.defaultProps, t: str => str };
-  return Component;
+const withTranslation = () => (component: React.FunctionComponent) => {
+  component.defaultProps = {
+    ...component.defaultProps,
+    t: (str: string) => str
+  };
+  return component;
 };
 
 const useTranslation = () => {
   return {
-    t: str => str,
+    t: (str: string) => str,
     i18n: {
       changeLanguage: () => new Promise(() => {})
     }
